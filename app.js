@@ -15,7 +15,7 @@ const db = firebase.firestore();
 let currentUser = { id: '', nama: '', nim: '', score: 0, rank: 0 };
 let currentQuestionIndex = 0;
 let userScore = 0;
-let currentCertDataUrl = "";
+let currentCertDataUrl = ""; // Variabel untuk menyimpan gambar sertifikat hasil render
 
 let timerInterval;
 const TIME_LIMIT = 15;
@@ -48,6 +48,7 @@ function startQuiz() {
         return;
     }
     
+    // Set ID unik berbasis string agar kompatibel dengan Firestore ID dokumen
     currentUser.id = 'user_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
     currentUser.nama = nama;
     currentUser.nim = nim;
@@ -59,7 +60,13 @@ function startQuiz() {
 }
 
 function loadQuestion() {
+    if (currentQuestionIndex >= questions.length) {
+        finishQuiz();
+        return;
+    }
+
     const q = questions[currentQuestionIndex];
+    // Menampilkan skor per soal (10 Poin)
     document.getElementById('question-count').innerHTML = `Soal ${currentQuestionIndex + 1} / ${questions.length} <br><small style="color:#0066cc; font-size:12px;">(Nilai: 10 Poin)</small>`;
     document.getElementById('question-text').innerText = q.q;
     document.getElementById('score-display').innerText = `Skor: ${userScore}`;
@@ -103,17 +110,22 @@ function startTimer() {
         
         if (timeLeft <= 0) {
             clearInterval(timerInterval);
-            selectAnswer(-1);
+            selectAnswer(-1); // Salah karena kehabisan waktu
         }
     }, 1000);
 }
 
 function selectAnswer(selectedIndex) {
     clearInterval(timerInterval);
+    
+    if (currentQuestionIndex >= questions.length) {
+        return;
+    }
+    
     const correctIndex = questions[currentQuestionIndex].answer;
     
     if (selectedIndex === correctIndex) {
-        userScore += 10;
+        userScore += 10; // Setiap soal bernilai 10 poin
     }
     
     currentQuestionIndex++;
@@ -133,7 +145,7 @@ async function finishQuiz() {
     document.getElementById('rank-message').innerText = `Menyimpan data ke server...`;
 
     try {
-        // Simpan data siswa ke koleksi Firestore bernama 'leaderboard'
+        // Simpan data siswa ke koleksi Firestore 'leaderboard'
         await db.collection('leaderboard').doc(currentUser.id).set({
             id: currentUser.id,
             nama: currentUser.nama,
@@ -142,21 +154,21 @@ async function finishQuiz() {
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        // Ambil data terbaru dari Firestore untuk menentukan peringkat
+        // Ambil data terbaru dari Firestore untuk menentukan peringkat secara real-time
         const snapshot = await db.collection('leaderboard').orderBy('score', 'desc').get();
         let leaderboardData = [];
         snapshot.forEach(doc => {
             leaderboardData.push(doc.data());
         });
-
-        // Tentukan peringkat user saat ini
+        
+        // Cari peringkat user saat ini
         currentUser.rank = leaderboardData.findIndex(u => u.id === currentUser.id) + 1;
         document.getElementById('rank-message').innerText = `Anda meraih Peringkat ke-${currentUser.rank}`;
-
-        // Render papan peringkat
+        
         const list = document.getElementById('leaderboard-list');
         list.innerHTML = '';
         
+        // Render Papan Peringkat Real-time dari Firebase
         leaderboardData.forEach((u, i) => {
             const li = document.createElement('li');
             if (u.id === currentUser.id) {
@@ -171,15 +183,19 @@ async function finishQuiz() {
             li.innerHTML = `<span>${medal} #${i+1} ${u.nama}</span> <span>${u.score} pts</span>`;
             list.appendChild(li);
         });
-
+        
+        // Logika Sertifikat: Hanya Peringkat 1, 2, dan 3 yang mendapatkan tombol unduh
         if (currentUser.rank <= 3) {
             document.getElementById('certificate-action').style.display = 'block';
+            
             document.getElementById('cert-name').innerText = currentUser.nama;
             document.getElementById('cert-nim').innerText = `NIM: ${currentUser.nim}`;
             document.getElementById('cert-rank').innerText = `Juara ${currentUser.rank}`;
+            
             const options = { day: 'numeric', month: 'long', year: 'numeric' };
             document.getElementById('cert-date').innerText = new Date().toLocaleDateString('id-ID', options);
         } else {
+            // Sembunyikan jika di luar 3 besar
             document.getElementById('certificate-action').style.display = 'none';
         }
 
@@ -191,6 +207,7 @@ async function finishQuiz() {
     showPage('result-page');
 }
 
+// Fungsi untuk memunculkan Pratinjau Sertifikat (Modal) tanpa glitch di balik card
 function showCertificate() {
     const btn = document.querySelector('#certificate-action button');
     const originalText = btn.innerHTML;
@@ -200,8 +217,11 @@ function showCertificate() {
     
     html2canvas(certElement, { scale: 2 }).then(canvas => {
         currentCertDataUrl = canvas.toDataURL('image/png');
+        
+        // Masukkan ke tag img di dalam modal pratinjau
         document.getElementById('cert-preview-img').src = currentCertDataUrl;
         document.getElementById('cert-modal').style.display = 'flex';
+        
         btn.innerHTML = originalText;
     });
 }
@@ -228,7 +248,7 @@ async function resetLeaderboard() {
                 batch.delete(doc.ref);
             });
             await batch.commit();
-            alert("Data Papan Peringkat online berhasil dihapus! Halaman akan memuat ulang.");
+            alert("Data Papan Peringkat online berhasil dihapus! Halaman akan dimuat ulang.");
             location.reload();
         } catch (error) {
             alert("Gagal mereset data: " + error.message);
