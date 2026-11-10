@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Data Science - Simulasi Mengajar</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Firebase App (Modular SDK) -->
+     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Halaman Login -->
+        <div id="login-page" class="page active">
+            <div class="card">
+                <!-- Judul ini memiliki fungsi tersembunyi (klik ganda) untuk reset dengan password admin123 -->
+                <h2 ondblclick="resetLeaderboard()" style="user-select: none;">Simulasi Kuis Data Science</h2>
+                <p style="margin-bottom: 20px; color: #666;">Silakan masukkan identitas untuk memulai kuis.</p>
+                <div class="input-group">
+                    <label>Nama Lengkap</label>
+                    <input type="text" id="nama" placeholder="Contoh: Budi Santoso" required>
+                </div>
+                <div class="input-group">
+                    <label>NIM / NIS</label>
+                    <input type="text" id="nim" placeholder="Contoh: 24076000" required>
+                </div>
+                <button onclick="startQuiz()" class="btn">Mulai Kuis</button>
+            </div>
+        </div>
+
+        <!-- Halaman Kuis -->
+        <div id="quiz-page" class="page">
+            <div class="card quiz-card">
+                <div class="header-quiz">
+                    <span id="question-count">Soal 1/10 <br><small style="color:#0066cc; font-size:12px;">(Nilai: 10 Poin)</small></span>
+                    <span id="timer-display" style="color: #e74c3c; font-weight: bold; font-size: 18px; display: flex; align-items: center; gap: 5px;">
+                        ⏱️ <span id="time-left">15</span>s
+                    </span>
+                    <span id="score-display">Skor: 0</span>
+                </div>
+                
+                <div style="width: 100%; background: #eee; height: 8px; border-radius: 4px; margin-bottom: 20px; overflow: hidden;">
+                    <div id="time-bar" style="width: 100%; height: 100%; background: #e74c3c; transition: width 1s linear;"></div>
+                </div>
+
+                <h3 id="question-text" style="font-size: 16px; margin-bottom: 15px;">Memuat pertanyaan...</h3>
+                <div id="options-container" class="options">
+                    <!-- Tombol opsi jawaban -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Halaman Hasil / Leaderboard -->
+        <div id="result-page" class="page">
+            <div class="card">
+                <h2>Kuis Selesai!</h2>
+                <h3 id="final-score" style="color: #0066cc; font-size: 24px; margin: 10px 0;">Skor: 100</h3>
+                <p id="rank-message" style="font-weight: bold; margin-bottom: 20px;">Menghitung peringkat...</p>
+                
+                <div class="leaderboard">
+                    <h3>🏆 Papan Peringkat (Real-Time)</h3>
+                    <ul id="leaderboard-list">
+                        <!-- Data Leaderboard -->
+                    </ul>
+                </div>
+
+                <div id="certificate-action" style="display: none; margin-top: 25px; padding-top: 15px; border-top: 1px dashed #ccc;">
+                    <p class="success-text">🎉 Selamat! Anda masuk 3 Besar dan berhak mendapatkan Sertifikat.</p>
+                    <button onclick="showCertificate()" class="btn btn-gold">👁️ Lihat & Unduh Sertifikat</button>
+                </div>
+                <button onclick="location.reload()" class="btn btn-outline" style="margin-top: 15px;">Kembali ke Awal (Peserta Selanjutnya)</button>
+            </div>
+        </div>
+
+        <!-- Template Sertifikat (Hidden Render Area) -->
+<div id="certificate-template" class="certificate-hidden">
+    <div class="cert-border">
+        <h1 style="color: #d4af37; font-size: 42px; margin-bottom: 10px; font-family: 'Georgia', serif;">SERTIFIKAT PENGHARGAAN</h1>
+        <p style="font-size: 18px; color: #555;">Diberikan dengan bangga kepada:</p>
+        <h2 id="cert-name" style="color: #003366; font-size: 34px; margin: 15px 0 5px; text-transform: uppercase;">Nama Siswa</h2>
+        <p id="cert-nim" style="font-size: 16px; color: #666; font-weight: bold;">NIM: 123456</p>
+        <p class="cert-desc" style="font-size: 20px; margin: 25px 0; color: #333; line-height: 1.5;">Atas keberhasilannya meraih <br><strong id="cert-rank" style="color: #d4af37; font-size: 26px;">Juara 1</strong><br> dalam Simulasi Kuis Pengenalan Data & Data Science.</p>
+        
+        <!-- Bagian Footer Sertifikat: Instruktur di tengah, Tanggal diperkecil tanpa strip panjang -->
+        <div class="cert-footer" style="display: flex; flex-direction: column; align-items: center; width: 100%; margin-top: 40px;">
+            <div style="text-align: center;">
+                <p style="font-size: 16px; color: #555; margin-bottom: 5px;">Instruktur / Guru</p>
+                <br><br>
+                <p style="font-size: 18px; border-bottom: 1.5px solid #333; padding-bottom: 4px; min-width: 220px; display: inline-block;"><strong>Izzatul Latifah, S.Pd</strong></p>
+                <p style="font-size: 14px; color: #666;">Diberikan pada tanggal: <span id="cert-date" style="font-weight: bold; color: #333;">10 November 2026</span></p>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+    <!-- MODAL PRATINJAU SERTIFIKAT -->
+    <div id="cert-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3 style="color: #333; margin-bottom: 10px;">Pratinjau Sertifikat</h3>
+            <img id="cert-preview-img" src="" alt="Sertifikat" style="width: 100%; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+            <button onclick="downloadCertificate()" class="btn btn-gold" style="margin-top: 20px;">📥 Unduh Sekarang</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
