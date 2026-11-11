@@ -1,11 +1,12 @@
 // --- KONFIGURASI FIREBASE ANDA ---
 const firebaseConfig = {
-    apiKey: "MASUKKAN_API_KEY_ANDA_DISINI",
-    authDomain: "MASUKKAN_AUTH_DOMAIN_ANDA_DISINI",
-    projectId: "MASUKKAN_PROJECT_ID_ANDA_DISINI",
-    storageBucket: "MASUKKAN_STORAGE_BUCKET_ANDA_DISINI",
-    messagingSenderId: "MASUKKAN_MESSAGING_SENDER_ID_ANDA_DISINI",
-    appId: "MASUKKAN_APP_ID_ANDA_DISINI"
+    apiKey: "AIzaSyAzgBYDh09Ew7QT594yqjnuIDolU920hBM",
+    authDomain: "kuisweb.firebaseapp.com",
+    projectId: "kuisweb",
+    storageBucket: "kuisweb.firebasestorage.app",
+    messagingSenderId: "677618469547",
+    appId: "1:677618469547:web:4c3b51466c85c6da6bc5ee",
+    measurementId: "G-5H49WF8NCD"
 };
 
 // Inisialisasi Firebase
