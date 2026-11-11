@@ -142,8 +142,14 @@ function selectAnswer(selectedIndex) {
 async function finishQuiz() {
     currentUser.score = userScore;
     
+    // 1. PINDAHKAN KE SINI: Langsung pindah ke halaman hasil agar tidak terasa stuck!
+    showPage('result-page');
+    
+    // 2. Beri status loading selagi menunggu internet
     document.getElementById('final-score').innerText = `Skor Akhir: ${userScore}`;
-    document.getElementById('rank-message').innerText = `Menyimpan data ke server...`;
+    document.getElementById('rank-message').innerText = `⏳ Menyimpan data ke server...`;
+    document.getElementById('leaderboard-list').innerHTML = '<li style="text-align:center; padding:15px;">Memuat papan peringkat...</li>';
+    document.getElementById('certificate-action').style.display = 'none';
 
     try {
         // Simpan data siswa ke koleksi Firestore 'leaderboard'
@@ -195,17 +201,13 @@ async function finishQuiz() {
             
             const options = { day: 'numeric', month: 'long', year: 'numeric' };
             document.getElementById('cert-date').innerText = new Date().toLocaleDateString('id-ID', options);
-        } else {
-            // Sembunyikan jika di luar 3 besar
-            document.getElementById('certificate-action').style.display = 'none';
         }
 
     } catch (error) {
         console.error("Gagal menyimpan ke Firebase: ", error);
-        alert("Terjadi kesalahan saat menyimpan skor ke server.");
+        document.getElementById('rank-message').innerText = `❌ Gagal terhubung ke server.`;
+        alert("Terjadi kesalahan jaringan saat menyimpan skor.");
     }
-    
-    showPage('result-page');
 }
 
 // Fungsi untuk memunculkan Pratinjau Sertifikat (Modal) tanpa glitch di balik card
